@@ -33,6 +33,9 @@ st.latex(r"P_{n}(x) = \sum_{k=0}^{n}\frac{f^{(k)}(0)}{k!}x^{k}")
 #-----------------------------------
 
 
+# 4.1. Préparer app.py
+
+
 import streamlit as st
 import autograd.numpy as np
 from autograd import grad
@@ -54,5 +57,54 @@ def taylor1(X, derivatives):
     return Y
 
 
+def taylor2(X, f, n):
+    """
+    X : le domaine
+    f : la fonction (sur scalaire)
+    n : le degré
+
+    Retourne Y, l'approximation de Taylor de f à l'ordre n sur X.
+    """
+    derivatives = []
+    d_f = f
+    for i in range(n) :
+        derivatives.append(d_f(0.0))
+        d_f = grad(d_f)
+    return taylor1(X,derivatives)
 
 
+def custom(X):
+    """retourne 2 * sin(X) + cos(X/4)"""
+    return 2 * np.sin(X) + np.cos(X/4)
+
+
+# 4.2. Catalogue de fonctions
+
+
+FONCTIONS = {'sin(x)' : np.sin,
+             'cos(x)' : np.cos,
+             'exp(x)' : np.exp,
+             'ln(x+1)' : (lambda x : np.log(x+1)),
+             '2sin(x) + cos(x/4)' : custom}
+
+
+# 4.3. Widgets dans la barre latérale
+
+
+with st.sidebar :
+    nom_f = st.selectbox("choisir la fonction", FONCTIONS)
+    ordre = st.slider("Choisir l'ordre n", 0, 10, value=3)
+    largeur = st.slider("Choisir la largeur de l'intervalle", 2., 20., value=12.6)
+
+
+# 4.4. Calculs et tracé
+
+
+f = FONCTIONS[nom_f]
+n = 400
+X = np.linspace(-largeur/2, largeur/2, n)
+Y = f(X)
+Y_taylor = taylor2(X,f,ordre)
+
+st.pyplot(plt.plot(X,Y))
+st.pyplot(plt.plot(X,Y_taylor))

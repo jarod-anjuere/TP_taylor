@@ -6,7 +6,7 @@ import streamlit as st
 
 st.title("Approximation de Taylor")
 st.write("Bienvenue dans votre outil de visualisation.")
-st.header("Objectif de l'app")
+st.subheader("Objectif de l'app")
 st.write("Implémenter la formule de Taylor avec une accumulation (taylor1), la généraliser (taylor2), puis mesurer la qualité de l'approximation.")
 
 
@@ -67,7 +67,7 @@ def taylor2(X, f, n):
     """
     derivatives = []
     d_f = f
-    for i in range(n) :
+    for i in range(n+1) :
         derivatives.append(d_f(0.0))
         d_f = grad(d_f)
     return taylor1(X,derivatives)
@@ -106,5 +106,67 @@ X = np.linspace(-largeur/2, largeur/2, n)
 Y = f(X)
 Y_taylor = taylor2(X,f,ordre)
 
-st.pyplot(plt.plot(X,Y))
-st.pyplot(plt.plot(X,Y_taylor))
+st.subheader("Graphique des approximations")
+fig, ax = plt.subplots()
+ax.plot(X,Y)
+ax.plot(X,Y_taylor)
+st.pyplot(fig)
+
+# Question : 
+# Pour n fixé, l'approximation est de moins en moins bonne lorsque l'on s'éloigne de 0
+# Pour ln(1+x), l'approximation ne devient pas meilleure lorsque n augmente pour x > 1
+
+
+#-----------------------------------
+# 5.Qualité de l'approximation
+#-----------------------------------
+
+
+# 5.1. Taux de coïncidence
+
+
+def taux_coincidence(Y, Y_taylor, seuil) :
+    mask_coincidence = abs(Y-Y_taylor) < seuil
+    return mask_coincidence.mean()
+
+
+with st.sidebar :
+    seuil = st.select_slider("Choisir le seuil de comparaison", [0.000001, 0.00001, 0.0001, 0.001, 0.01], value=0.001)
+
+st.write(f"Proportion de l'intervalle où l'approximation à un distance de {seuil} de la fonction : {taux_coincidence(Y, Y_taylor, seuil)}")
+
+# Question : la comparaison avec nan renvoie faux ce qui diminue le taux de coincidence pour ln(1+x)
+
+
+# 5.2. Courbe d'erreur
+
+with st.sidebar :
+    afficher_erreur = st.checkbox("Afficher l'erreur")
+
+if afficher_erreur :
+    st.subheader("Erreur de l'approximation")
+    fig2, ax2 = plt.subplots()
+    ax2.plot(X,abs(Y-Y_taylor))
+    plt.yscale('log')
+    st.pyplot(fig2)
+
+
+#-----------------------------------
+# 6. Comparer plusieurs ordres
+#-----------------------------------
+
+if "ordres" not in st.session_state :
+    st.session_state.ordres = []
+
+with st.sidebar :
+    ajout_ordre = st.button("Ajouter cet ordre à la comparaison")
+
+if ajout_ordre and ordre not in st.session_state.ordres :
+    st.session_state.ordres.append(ordre)
+
+st.subheader("Affichage des ordres sélectionnés")
+fig3, ax3 = plt.subplots()
+ax3.plot(X,Y)
+for n in st.session_state.ordres : 
+    ax3.plot(X,taylor2(X,f,n))
+st.pyplot(fig3)
